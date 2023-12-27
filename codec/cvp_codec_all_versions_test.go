@@ -748,10 +748,11 @@ func Test_cvpCodecAllVersions_LargestEncodedLightValidators(t *testing.T) {
 		}
 	}
 
+	for v, size := range bytes {
+		fmt.Printf("v%d: %5d bytes\n", v, size)
+	}
+
 	if maxSize != constants.MAX_ENCODED_LIGHT_VALIDATORS_BYTES {
-		for v, size := range bytes {
-			fmt.Printf("v%d: %5d bytes\n", v, size)
-		}
 		t.Errorf("largest encoded light validators bytes = %d, want exact %d", maxSize, constants.MAX_ENCODED_LIGHT_VALIDATORS_BYTES)
 	}
 }
@@ -791,10 +792,11 @@ func Test_cvpCodecAllVersions_LargestEncodedPreVoteInfo(t *testing.T) {
 		}
 	}
 
+	for v, size := range bytes {
+		fmt.Printf("v%d: %5d bytes\n", v, size)
+	}
+
 	if maxSize != constants.MAX_ENCODED_NEXT_BLOCK_PRE_VOTE_INFO_BYTES {
-		for v, size := range bytes {
-			fmt.Printf("v%d: %5d bytes\n", v, size)
-		}
 		t.Errorf("largest encoded next block pre-vote information bytes = %d, want exact %d", maxSize, constants.MAX_ENCODED_NEXT_BLOCK_PRE_VOTE_INFO_BYTES)
 	}
 }

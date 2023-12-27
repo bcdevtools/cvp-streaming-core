@@ -352,10 +352,19 @@ func Test_cvpCodecV2_DecodeStreamingLightValidators(t *testing.T) {
 			wantErrDecode: false,
 		},
 		{
+			name:                  "icorrect codec version",
+			inputEncodedData:      []byte("1|1/2/3|1000|100|254|000ABCDC"),
+			wantErrDecode:         true,
+			wantErrDecodeContains: "bad encoding prefix",
+		},
+		{
 			name: "icorrect codec version",
 			inputEncodedData: mergeBuffers(
-				[]byte{'1', cvpCodecV2Separator},
-				[]byte{0x0, 0x0}, []byte{0x0a, 0x0a}, b64bz(fssut("Val1", 20)),
+				[]byte{0x3, cvpCodecV3Separator},
+				[]byte("1/2/3"), []byte{cvpCodecV3Separator},
+				[]byte("1"), []byte{cvpCodecV3Separator},
+				[]byte{0x01, 0x00}, []byte{0x02, 0x36}, []byte{cvpCodecV3Separator},
+				[]byte{0x00, 0x00}, []byte("ABCD"), []byte("C"),
 			),
 			wantErrDecode:         true,
 			wantErrDecodeContains: "bad encoding prefix",

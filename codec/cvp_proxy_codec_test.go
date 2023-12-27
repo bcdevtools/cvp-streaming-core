@@ -79,6 +79,7 @@ func Test_proxyCvpCodec_EncodeDecodeStreamingLightValidators(t *testing.T) {
 				}
 				testDetect(cvpV1CodecImpl)
 				testDetect(cvpV2CodecImpl)
+				testDetect(cvpV3CodecImpl)
 			} else {
 				t.Errorf("DecodeStreamingLightValidators()\ngotDecoded = %v\nwant %v", gotDecoded, tt.want)
 			}
@@ -161,6 +162,7 @@ func Test_proxyCvpCodec_EncodeDecodeStreamingNextBlockVotingInformation(t *testi
 				}
 				testDetect(cvpV1CodecImpl)
 				testDetect(cvpV2CodecImpl)
+				testDetect(cvpV3CodecImpl)
 			} else {
 				t.Errorf("DecodeStreamingNextBlockVotingInformation()\ngotDecoded = %v\nwant %v", gotDecoded, tt.input)
 			}

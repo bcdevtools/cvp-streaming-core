@@ -9,7 +9,7 @@ import (
 
 var _ CvpCodec = (*proxyCvpCodec)(nil)
 
-var defaultCvpCodec = getCvpCodecV3()
+var defaultCvpCodec = getCvpCodecV2()
 
 // proxyCvpCodec is an implementation of CvpCodec.
 //
