@@ -118,3 +118,7 @@ func (c cvpCodecV3) DecodeStreamingNextBlockVotingInformation(bz []byte) (*types
 
 	return c.v2Codec.DecodeStreamingNextBlockVotingInformation(bzByV2)
 }
+
+func (c cvpCodecV3) GetVersion() CvpCodecVersion {
+	return CvpCodecVersionV3
+}

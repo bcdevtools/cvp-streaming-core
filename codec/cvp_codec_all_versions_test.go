@@ -801,6 +801,37 @@ func Test_cvpCodecAllVersions_LargestEncodedPreVoteInfo(t *testing.T) {
 	}
 }
 
+func Test_cvpCodecAllVersions_GetVersion(t *testing.T) {
+	tests := []struct {
+		codec       CvpCodec
+		wantVersion CvpCodecVersion
+	}{
+		{
+			codec:       cvpV1CodecImpl,
+			wantVersion: CvpCodecVersionV1,
+		},
+		{
+			codec:       cvpV2CodecImpl,
+			wantVersion: CvpCodecVersionV2,
+		},
+		{
+			codec:       cvpV3CodecImpl,
+			wantVersion: CvpCodecVersionV3,
+		},
+		{
+			codec:       NewProxyCvpCodec(),
+			wantVersion: CvpCodecVersionV3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.wantVersion), func(t *testing.T) {
+			if gotVersion := tt.codec.GetVersion(); gotVersion != tt.wantVersion {
+				t.Errorf("GetVersion() = %v, want %v", gotVersion, tt.wantVersion)
+			}
+		})
+	}
+}
+
 // fssut means fill suffix space chars up to X bytes.
 //
 // For testing purpose only.

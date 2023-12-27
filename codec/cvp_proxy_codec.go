@@ -85,3 +85,7 @@ func (p proxyCvpCodec) DecodeStreamingNextBlockVotingInformation(bz []byte) (*ty
 
 	return nil, fmt.Errorf("unable to detect encoder version")
 }
+
+func (p proxyCvpCodec) GetVersion() CvpCodecVersion {
+	return p.cvpCodecImpl.GetVersion()
+}

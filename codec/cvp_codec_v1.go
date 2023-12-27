@@ -323,3 +323,7 @@ func (c cvpCodecV1) DecodeStreamingNextBlockVotingInformation(bz []byte) (*types
 
 	return &result, nil
 }
+
+func (c cvpCodecV1) GetVersion() CvpCodecVersion {
+	return CvpCodecVersionV1
+}

@@ -20,4 +20,15 @@ type CvpCodec interface {
 
 	// DecodeStreamingNextBlockVotingInformation decodes the given string into next block voting information.
 	DecodeStreamingNextBlockVotingInformation([]byte) (*types.StreamingNextBlockVotingInformation, error)
+
+	// GetVersion returns the implementation version of this codec instance.
+	GetVersion() CvpCodecVersion
 }
+
+type CvpCodecVersion string
+
+const (
+	CvpCodecVersionV1 CvpCodecVersion = "v1"
+	CvpCodecVersionV2 CvpCodecVersion = "v2"
+	CvpCodecVersionV3 CvpCodecVersion = "v3"
+)
