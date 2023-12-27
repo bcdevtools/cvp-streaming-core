@@ -22,6 +22,9 @@ type CvpCodec interface {
 	DecodeStreamingNextBlockVotingInformation([]byte) (*types.StreamingNextBlockVotingInformation, error)
 
 	// GetVersion returns the implementation version of this codec instance.
+	//
+	// In case a proxy CvpCodec, it returns the underlying implementation version
+	// which set by NewProxyCvpCodec (default) or WrapCvpCodecInProxy (specify).
 	GetVersion() CvpCodecVersion
 }
 
