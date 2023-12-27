@@ -264,6 +264,9 @@ func Test_cvpCodecAllVersions_EncodeAndDecodeStreamingLightValidators(t *testing
 		t.Run(fmt.Sprintf("%s_v2", tt.name), func(t *testing.T) {
 			testHandler(cvpV2CodecImpl, t)
 		})
+		t.Run(fmt.Sprintf("%s_v3", tt.name), func(t *testing.T) {
+			testHandler(cvpV3CodecImpl, t)
+		})
 	}
 
 	//goland:noinspection SpellCheckingInspection
@@ -407,6 +410,9 @@ func Test_cvpCodecAllVersions_EncodeAndDecodeStreamingLightValidators(t *testing
 		})
 		t.Run(fmt.Sprintf("%s_v2", tt.name), func(t *testing.T) {
 			monikerNameContainsSeparatorHandler(cvpCodecV2Separator, cvpV2CodecImpl, t)
+		})
+		t.Run(fmt.Sprintf("%s_v3", tt.name), func(t *testing.T) {
+			monikerNameContainsSeparatorHandler(cvpCodecV3Separator, cvpV3CodecImpl, t)
 		})
 	}
 }
@@ -673,7 +679,7 @@ func Test_cvpCodecAllVersions_EncodeAndDecodeStreamingNextBlockVotingInformation
 						}
 					}
 				}()
-				bz = cvpV1CodecImpl.EncodeStreamingNextBlockVotingInformation(&tt.inf)
+				bz = codec.EncodeStreamingNextBlockVotingInformation(&tt.inf)
 				return
 			}()
 
@@ -681,7 +687,7 @@ func Test_cvpCodecAllVersions_EncodeAndDecodeStreamingNextBlockVotingInformation
 				return
 			}
 
-			gotDecoded, err := cvpV1CodecImpl.DecodeStreamingNextBlockVotingInformation(gotEncoded)
+			gotDecoded, err := codec.DecodeStreamingNextBlockVotingInformation(gotEncoded)
 			if (err != nil) != tt.wantErrDecode {
 				t.Errorf("DecodeStreamingNextBlockVotingInformation() error = %v, wantErr %v", err, tt.wantErrDecode)
 				return
@@ -709,6 +715,9 @@ func Test_cvpCodecAllVersions_EncodeAndDecodeStreamingNextBlockVotingInformation
 		t.Run(fmt.Sprintf("%s_v2", tt.name), func(t *testing.T) {
 			testHandler(cvpV2CodecImpl, t)
 		})
+		t.Run(fmt.Sprintf("%s_v3", tt.name), func(t *testing.T) {
+			testHandler(cvpV3CodecImpl, t)
+		})
 	}
 }
 
@@ -729,6 +738,9 @@ func Test_cvpCodecAllVersions_LargestEncodedLightValidators(t *testing.T) {
 	encodedV2 := cvpV2CodecImpl.EncodeStreamingLightValidators(validators)
 	bytes[2] = len(encodedV2)
 
+	encodedV3 := cvpV3CodecImpl.EncodeStreamingLightValidators(validators)
+	bytes[3] = len(encodedV3)
+
 	var maxSize int
 	for _, size := range bytes {
 		if size > maxSize {
@@ -736,10 +748,11 @@ func Test_cvpCodecAllVersions_LargestEncodedLightValidators(t *testing.T) {
 		}
 	}
 
+	for v, size := range bytes {
+		fmt.Printf("v%d: %5d bytes\n", v, size)
+	}
+
 	if maxSize != constants.MAX_ENCODED_LIGHT_VALIDATORS_BYTES {
-		for v, size := range bytes {
-			fmt.Printf("v%d: %5d bytes\n", v, size)
-		}
 		t.Errorf("largest encoded light validators bytes = %d, want exact %d", maxSize, constants.MAX_ENCODED_LIGHT_VALIDATORS_BYTES)
 	}
 }
@@ -769,6 +782,9 @@ func Test_cvpCodecAllVersions_LargestEncodedPreVoteInfo(t *testing.T) {
 	encodedV2 := cvpV2CodecImpl.EncodeStreamingNextBlockVotingInformation(&inf)
 	bytes[2] = len(encodedV2)
 
+	encodedV3 := cvpV3CodecImpl.EncodeStreamingNextBlockVotingInformation(&inf)
+	bytes[3] = len(encodedV3)
+
 	var maxSize int
 	for _, size := range bytes {
 		if size > maxSize {
@@ -776,11 +792,43 @@ func Test_cvpCodecAllVersions_LargestEncodedPreVoteInfo(t *testing.T) {
 		}
 	}
 
+	for v, size := range bytes {
+		fmt.Printf("v%d: %5d bytes\n", v, size)
+	}
+
 	if maxSize != constants.MAX_ENCODED_NEXT_BLOCK_PRE_VOTE_INFO_BYTES {
-		for v, size := range bytes {
-			fmt.Printf("v%d: %5d bytes\n", v, size)
-		}
 		t.Errorf("largest encoded next block pre-vote information bytes = %d, want exact %d", maxSize, constants.MAX_ENCODED_NEXT_BLOCK_PRE_VOTE_INFO_BYTES)
+	}
+}
+
+func Test_cvpCodecAllVersions_GetVersion(t *testing.T) {
+	tests := []struct {
+		codec       CvpCodec
+		wantVersion CvpCodecVersion
+	}{
+		{
+			codec:       cvpV1CodecImpl,
+			wantVersion: CvpCodecVersionV1,
+		},
+		{
+			codec:       cvpV2CodecImpl,
+			wantVersion: CvpCodecVersionV2,
+		},
+		{
+			codec:       cvpV3CodecImpl,
+			wantVersion: CvpCodecVersionV3,
+		},
+		{
+			codec:       NewProxyCvpCodec(),
+			wantVersion: CvpCodecVersionV3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.wantVersion), func(t *testing.T) {
+			if gotVersion := tt.codec.GetVersion(); gotVersion != tt.wantVersion {
+				t.Errorf("GetVersion() = %v, want %v", gotVersion, tt.wantVersion)
+			}
+		})
 	}
 }
 

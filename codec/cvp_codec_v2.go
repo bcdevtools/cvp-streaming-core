@@ -31,7 +31,11 @@ var collisionSeparator2BytesReplacement = []byte{0xFF, 0xFF}
 type cvpCodecV2 struct {
 }
 
-func getCvpCodecV2() CvpCodec {
+// GetCvpCodecV2 returns new instance of v2 implementation of CvpCodec.
+//
+// V2 output smaller size of encoded data than v1.
+// But still not as small as v3 (gzip version of v2).
+func GetCvpCodecV2() CvpCodec {
 	return cvpCodecV2{}
 }
 
@@ -340,4 +344,8 @@ func (c cvpCodecV2) DecodeStreamingNextBlockVotingInformation(bz []byte) (*types
 	result.ValidatorVoteStates = validatorVoteStates
 
 	return &result, nil
+}
+
+func (c cvpCodecV2) GetVersion() CvpCodecVersion {
+	return CvpCodecVersionV2
 }

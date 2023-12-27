@@ -29,7 +29,10 @@ const cvpCodecV1HexEncodedMonikerBufferSize = 40
 type cvpCodecV1 struct {
 }
 
-func getCvpCodecV1() CvpCodec {
+// GetCvpCodecV1 returns genesis version of CvpCodec.
+//
+// Deprecated: use NewProxyCvpCodec for the latest and compatible version.
+func GetCvpCodecV1() CvpCodec {
 	return cvpCodecV1{}
 }
 
@@ -319,4 +322,8 @@ func (c cvpCodecV1) DecodeStreamingNextBlockVotingInformation(bz []byte) (*types
 	result.ValidatorVoteStates = validatorVoteStates
 
 	return &result, nil
+}
+
+func (c cvpCodecV1) GetVersion() CvpCodecVersion {
+	return CvpCodecVersionV1
 }

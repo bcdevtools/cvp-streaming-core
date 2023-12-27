@@ -2,6 +2,8 @@ package codec
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"github.com/bcdevtools/cvp-streaming-core/constants"
@@ -12,10 +14,17 @@ import (
 	"time"
 )
 
-//goland:noinspection GoDeprecation
-var cvpV1CodecImpl = GetCvpCodecV1()
+var cvpV3CodecImpl = GetCvpCodecV3()
 
-func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
+func bufferFromHex(hexString string) []byte {
+	bz, err := hex.DecodeString(hexString)
+	if err != nil {
+		panic(err)
+	}
+	return bz
+}
+
+func Test_cvpCodecV3_EncodeDecodeStreamingLightValidators(t *testing.T) {
 	//goland:noinspection SpellCheckingInspection
 	tests := []struct {
 		name                               string
@@ -31,7 +40,7 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 			validators: []types.StreamingLightValidator{
 				{
 					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
+					VotingPowerDisplayPercent: 10.11,
 					Moniker:                   "Val1",
 				},
 				{
@@ -41,7 +50,7 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 				},
 			},
 			wantPanicEncode: false,
-			wantEncodedData: []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20)) + "|00100102" + hex.EncodeToString(fssut("Val2", 20))),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa6160e0e20ecb752bf60d764cf774c6c0b6350c8c8c4c600599d81500020000ffff80dcd11643000000"),
 			wantErrDecode:   false,
 		},
 		{
@@ -49,12 +58,12 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 			validators: []types.StreamingLightValidator{
 				{
 					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
+					VotingPowerDisplayPercent: 10.11,
 					Moniker:                   "Val1",
 				},
 			},
 			wantPanicEncode: false,
-			wantEncodedData: []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20))),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa6160e0e20ecb752bf60d764cf774c6c0b680000000ffffc73c489022000000"),
 			wantErrDecode:   false,
 		},
 		{
@@ -97,14 +106,13 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 				},
 			},
 			wantPanicEncode: false,
-			wantEncodedData: []byte("1|00010000" + hex.EncodeToString(fssut("Val1", 20))),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa6160486108cb752bf60d764cf774c6c0b680000000ffff7548b1d322000000"),
 			wantErrDecode:   false,
 		},
 		{
 			name:                  "not accept empty validator list",
 			validators:            []types.StreamingLightValidator{},
 			wantPanicEncode:       false,
-			wantEncodedData:       []byte("1|"),
 			wantErrDecode:         true,
 			wantErrDecodeContains: "invalid empty validator raw data",
 		},
@@ -177,7 +185,7 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 				},
 			},
 			wantPanicEncode: false,
-			wantEncodedData: []byte("1|00009900" + hex.EncodeToString([]byte("12345678901234567890"))),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa61604866f00df1acf2730935f2ab4a37f57571adf4ad0a34f4cb4a36f10f71b405040000ffff1a0dbe2022000000"),
 			wantDecodedOrUseInputAsWantDecoded: []types.StreamingLightValidator{
 				{
 					Index:                     0,
@@ -197,7 +205,7 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 				},
 			},
 			wantPanicEncode: false,
-			wantEncodedData: []byte("1|00009900" + hex.EncodeToString(fssut(`<he'llo">`, 20))),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa616048660870cfc8f132aa284eaaf4d4f674764c47c2b680000000ffffc22b3a5b22000000"),
 			wantDecodedOrUseInputAsWantDecoded: []types.StreamingLightValidator{
 				{
 					Index:                     0,
@@ -239,7 +247,7 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 						}
 					}
 				}()
-				bz = cvpV1CodecImpl.EncodeStreamingLightValidators(tt.validators)
+				bz = cvpV3CodecImpl.EncodeStreamingLightValidators(tt.validators)
 				return
 			}()
 
@@ -249,12 +257,12 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 
 			if len(tt.wantEncodedData) > 0 {
 				if !bytes.Equal(gotEncoded, tt.wantEncodedData) {
-					t.Errorf("EncodeStreamingLightValidators()\ngotEncoded = %v\nwant %v", string(gotEncoded), string(tt.wantEncodedData))
+					t.Errorf("EncodeStreamingLightValidators()\n%v (got)\n%v (want)", hex.EncodeToString(gotEncoded), hex.EncodeToString(tt.wantEncodedData))
 					return
 				}
 			}
 
-			gotDecoded, err := cvpV1CodecImpl.DecodeStreamingLightValidators(gotEncoded)
+			gotDecoded, err := cvpV3CodecImpl.DecodeStreamingLightValidators(gotEncoded)
 			if (err != nil) != tt.wantErrDecode {
 				t.Errorf("DecodeStreamingLightValidators() error = %v, wantErr %v", err, tt.wantErrDecode)
 				return
@@ -279,7 +287,9 @@ func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 	}
 }
 
-func Test_cvpCodecV1_DecodeStreamingLightValidators(t *testing.T) {
+func Test_cvpCodecV3_DecodeStreamingLightValidators(t *testing.T) {
+	// The codec v3 is use v2 underlying and gzip so not much to test here.
+
 	//goland:noinspection SpellCheckingInspection
 	tests := []struct {
 		name                  string
@@ -289,199 +299,27 @@ func Test_cvpCodecV1_DecodeStreamingLightValidators(t *testing.T) {
 		wantErrDecodeContains string
 	}{
 		{
-			name:             "normal, 2 validators",
-			inputEncodedData: []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20)) + "|00100102" + hex.EncodeToString(fssut("Val2", 20))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   "Val1",
-				},
-				{
-					Index:                     1,
-					VotingPowerDisplayPercent: 01.02,
-					Moniker:                   "Val2",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "normal, 1 validator",
-			inputEncodedData: []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   "Val1",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "decode upper case input",
-			inputEncodedData: []byte(strings.ToUpper("1|00001010" + hex.EncodeToString(fssut("Val1", 20)))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   "Val1",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "decode lower case input",
-			inputEncodedData: []byte(strings.ToLower("1|00001010" + hex.EncodeToString(fssut("Val1", 20)))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   "Val1",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:                  "icorrect codec version",
-			inputEncodedData:      []byte("2|00001010" + hex.EncodeToString(fssut("Val1", 20))),
+			name: "icorrect codec version",
+			inputEncodedData: mergeBuffers(
+				[]byte{'1', cvpCodecV3Separator},
+				[]byte{0x0, 0x0}, []byte{0x0a, 0x0a}, b64bz(fssut("Val1", 20)),
+			),
 			wantErrDecode:         true,
 			wantErrDecodeContains: "bad encoding prefix",
 		},
 		{
-			name:                  "bad format validator index",
-			inputEncodedData:      []byte("1|aaa01010" + hex.EncodeToString(fssut("Val1", 20))),
+			name: "icorrect codec version",
+			inputEncodedData: mergeBuffers(
+				[]byte{'2', cvpCodecV3Separator},
+				[]byte{0x0, 0x0}, []byte{0x0a, 0x0a}, b64bz(fssut("Val1", 20)),
+			),
 			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to parse validator index",
-		},
-		{
-			name:                  "validator index can not be negative",
-			inputEncodedData:      []byte("1|-0101010" + hex.EncodeToString(fssut("Val1", 20))),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index",
-		},
-		{
-			name:                  "validator index can not be greater than 998",
-			inputEncodedData:      []byte("1|99901010" + hex.EncodeToString(fssut("Val1", 20))),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index",
-		},
-		{
-			name:                  "bad format voting power percent x100",
-			inputEncodedData:      []byte("1|000aaaaa" + hex.EncodeToString(fssut("Val1", 20))),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to parse voting power display percent x100",
-		},
-		{
-			name:                  "voting power percent can not be negative",
-			inputEncodedData:      []byte("1|000-0001" + hex.EncodeToString(fssut("Val1", 20))),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid voting power display percent",
-		},
-		{
-			name:                  "voting power percent can not greater than 100",
-			inputEncodedData:      []byte("1|00010001" + hex.EncodeToString(fssut("Val1", 20))),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid voting power display percent",
-		},
-		{
-			name:                  "moniker longer than 20 bytes",
-			inputEncodedData:      []byte("1|00001010" + hex.EncodeToString([]byte("123456789012345678901"))),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator raw data length 50",
-		},
-		{
-			name:                  "bad moniker bytes",
-			inputEncodedData:      []byte("1|00001010" + hex.EncodeToString([]byte("1234567890123456789")) + "ZZ"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to decode moniker",
-		},
-		{
-			name:                  "bad validators index",
-			inputEncodedData:      []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20)) + "|00200102" + hex.EncodeToString(fssut("Val2", 20))), // index 0 jump to 2
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index sequence",
-		},
-		{
-			name:                  "bad validators index",
-			inputEncodedData:      []byte("1|00101010" + hex.EncodeToString(fssut("Val1", 20)) + "|00200102" + hex.EncodeToString(fssut("Val2", 20))), // missing index 0
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index sequence",
-		},
-		{
-			name:             "santinize moniker",
-			inputEncodedData: []byte(strings.ToLower("1|00001010" + hex.EncodeToString(fssut(`<he'llo">`, 20)))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   "(he`llo`)",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "no moniker",
-			inputEncodedData: []byte("1|00001010"),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   "",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:                  "wrong size moniker",
-			inputEncodedData:      []byte("1|0000101030"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator raw data length 10",
-		},
-		{
-			name:                  "not accept empty validator list",
-			inputEncodedData:      []byte("1|"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid empty validator raw data",
-		},
-		{
-			name:                  "not accept validator part with empty data",
-			inputEncodedData:      []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20)) + "|"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid empty validator raw data",
-		},
-		{
-			name:             "moniker contains separator",
-			inputEncodedData: []byte(strings.ToLower("1|00001010" + hex.EncodeToString(fssut(cvpCodecV1Separator+`Val1`, 20)))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   cvpCodecV1Separator + "Val1",
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "moniker contains separator",
-			inputEncodedData: []byte(strings.ToLower("1|00001010" + hex.EncodeToString(fssut(cvpCodecV1Separator+`Val1`, 20)) + cvpCodecV1Separator + "00101010" + hex.EncodeToString(fssut(cvpCodecV1Separator+`Val2`, 20)))),
-			wantDecoded: types.StreamingLightValidators{
-				{
-					Index:                     0,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   cvpCodecV1Separator + "Val1",
-				},
-				{
-					Index:                     1,
-					VotingPowerDisplayPercent: 10.10,
-					Moniker:                   cvpCodecV1Separator + "Val2",
-				},
-			},
-			wantErrDecode: false,
+			wantErrDecodeContains: "bad encoding prefix",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDecoded, err := cvpV1CodecImpl.DecodeStreamingLightValidators(tt.inputEncodedData)
+			gotDecoded, err := cvpV3CodecImpl.DecodeStreamingLightValidators(tt.inputEncodedData)
 
 			if (err != nil) != tt.wantErrDecode {
 				if err == nil {
@@ -507,7 +345,7 @@ func Test_cvpCodecV1_DecodeStreamingLightValidators(t *testing.T) {
 	}
 }
 
-func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testing.T) {
+func Test_cvpCodecV3_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testing.T) {
 	//goland:noinspection SpellCheckingInspection
 	tests := []struct {
 		name                               string
@@ -556,7 +394,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 					},
 				},
 			},
-			wantEncodedData: []byte("1|1/2/3|1000|100|254|000ABCDC00100000002ABCDV003----X"),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa31d437d237ae31ac61646032ab6160707472767166603400010626102f8c81595757573702100000ffff5854bb842b000000"),
 			wantErrDecode:   false,
 		},
 		{
@@ -576,7 +414,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 					},
 				},
 			},
-			wantEncodedData: []byte("1|1/2/3|1000|100|254|000ABCDC"),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa31d437d237ae31ac61646032ab6160707472767106040000ffff92aa111416000000"),
 			wantErrDecode:   false,
 		},
 		{
@@ -588,7 +426,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 				PreCommitVotedPercent: 2.54,
 				ValidatorVoteStates:   []types.StreamingValidatorVoteState{},
 			},
-			wantEncodedData:       []byte("1|1/2/3|1000|100|254|"),
+			wantEncodedData:       bufferFromHex("037c1f8b08000000000000ff62aa31d437d237ae31ac61646032ab01040000ffff950029b10f000000"),
 			wantErrDecode:         true,
 			wantErrDecodeContains: "missing validator vote states",
 		},
@@ -609,7 +447,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 					},
 				},
 			},
-			wantEncodedData: []byte("1|1/2/3|0|100|254|000ABCDC"),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa31d437d237ae31a861646032ab6160707472767106040000ffffe44b1e8916000000"),
 			wantDecodedOrUseInputAsWantDecoded: &types.StreamingNextBlockVotingInformation{
 				HeightRoundStep:       "1/2/3",
 				Duration:              0,
@@ -627,12 +465,12 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 			},
 		},
 		{
-			name: "percent will be x100 for saving space of dot",
+			name: "percent computed correctly",
 			inf: types.StreamingNextBlockVotingInformation{
 				HeightRoundStep:       "1/2/3",
 				Duration:              2 * time.Second,
-				PreVotedPercent:       1.1,
-				PreCommitVotedPercent: 2.54,
+				PreVotedPercent:       99.98,
+				PreCommitVotedPercent: 97.96,
 				ValidatorVoteStates: []types.StreamingValidatorVoteState{
 					{
 						ValidatorIndex:    0,
@@ -643,7 +481,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 					},
 				},
 			},
-			wantEncodedData: []byte("1|1/2/3|2000|110|254|000ABCDC"),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa31d437d237ae31aa494e4a4ca86160707472767106040000ffffa8d5399f16000000"),
 		},
 		{
 			name: "panic encode if negative validator index",
@@ -733,7 +571,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 			name: "automatically fill prevoted block hash if empty",
 			inf: types.StreamingNextBlockVotingInformation{
 				HeightRoundStep:       "1/2/3",
-				Duration:              time.Second,
+				Duration:              3 * time.Second,
 				PreVotedPercent:       1,
 				PreCommitVotedPercent: 2,
 				ValidatorVoteStates: []types.StreamingValidatorVoteState{
@@ -743,10 +581,10 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 					},
 				},
 			},
-			wantEncodedData: []byte("1|1/2/3|1000|100|200|000----X"),
+			wantEncodedData: bufferFromHex("037c1f8b08000000000000ff62aa31d437d237ae31ae61646062a86160d0d5d5d58d00040000ffff5655c0eb16000000"),
 			wantDecodedOrUseInputAsWantDecoded: &types.StreamingNextBlockVotingInformation{
 				HeightRoundStep:       "1/2/3",
-				Duration:              time.Second,
+				Duration:              3 * time.Second,
 				PreVotedPercent:       1,
 				PreCommitVotedPercent: 2,
 				ValidatorVoteStates: []types.StreamingValidatorVoteState{
@@ -794,7 +632,7 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 						}
 					}
 				}()
-				bz = cvpV1CodecImpl.EncodeStreamingNextBlockVotingInformation(&tt.inf)
+				bz = cvpV3CodecImpl.EncodeStreamingNextBlockVotingInformation(&tt.inf)
 				return
 			}()
 
@@ -804,12 +642,12 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 
 			if len(tt.wantEncodedData) > 0 {
 				if !bytes.Equal(gotEncoded, tt.wantEncodedData) {
-					t.Errorf("EncodeStreamingNextBlockVotingInformation()\ngotEncoded = %v\nwant %v", string(gotEncoded), string(tt.wantEncodedData))
+					t.Errorf("EncodeStreamingNextBlockVotingInformation()\n%v (got)\n%v (want)", hex.EncodeToString(gotEncoded), hex.EncodeToString(tt.wantEncodedData))
 					return
 				}
 			}
 
-			gotDecoded, err := cvpV1CodecImpl.DecodeStreamingNextBlockVotingInformation(gotEncoded)
+			gotDecoded, err := cvpV3CodecImpl.DecodeStreamingNextBlockVotingInformation(gotEncoded)
 			if (err != nil) != tt.wantErrDecode {
 				t.Errorf("DecodeStreamingNextBlockVotingInformation() error = %v, wantErr %v", err, tt.wantErrDecode)
 				return
@@ -834,7 +672,9 @@ func Test_cvpCodecV1_EncodeAndDecodeStreamingNextBlockVotingInformation(t *testi
 	}
 }
 
-func Test_cvpCodecV1_DecodeStreamingNextBlockVotingInformation(t *testing.T) {
+func Test_cvpCodecV3_DecodeStreamingNextBlockVotingInformation(t *testing.T) {
+	// The codec v3 is use v2 underlying and gzip so not much to test here.
+
 	//goland:noinspection SpellCheckingInspection
 	tests := []struct {
 		name                  string
@@ -844,109 +684,8 @@ func Test_cvpCodecV1_DecodeStreamingNextBlockVotingInformation(t *testing.T) {
 		wantErrDecodeContains string
 	}{
 		{
-			name:             "normal, 4 validators",
-			inputEncodedData: []byte("1|1/2/3|1000|100|254|000ABCDC00100000002ABCDV003----X"),
-			wantDecoded: &types.StreamingNextBlockVotingInformation{
-				HeightRoundStep:       "1/2/3",
-				Duration:              1 * time.Second,
-				PreVotedPercent:       1,
-				PreCommitVotedPercent: 2.54,
-				ValidatorVoteStates: []types.StreamingValidatorVoteState{
-					{
-						ValidatorIndex:    0,
-						PreVotedBlockHash: "ABCD",
-						PreVoted:          true,
-						VotedZeroes:       false,
-						PreCommitVoted:    true,
-					},
-					{
-						ValidatorIndex:    1,
-						PreVotedBlockHash: "0000",
-						PreVoted:          true,
-						VotedZeroes:       true,
-						PreCommitVoted:    false,
-					},
-					{
-						ValidatorIndex:    2,
-						PreVotedBlockHash: "ABCD",
-						PreVoted:          true,
-						VotedZeroes:       false,
-						PreCommitVoted:    false,
-					},
-					{
-						ValidatorIndex:    3,
-						PreVotedBlockHash: "----",
-						PreVoted:          false,
-						VotedZeroes:       false,
-						PreCommitVoted:    false,
-					},
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "normal, 1 validator",
-			inputEncodedData: []byte("1|1/2/3|1000|100|254|000ABCDC"),
-			wantDecoded: &types.StreamingNextBlockVotingInformation{
-				HeightRoundStep:       "1/2/3",
-				Duration:              1 * time.Second,
-				PreVotedPercent:       1,
-				PreCommitVotedPercent: 2.54,
-				ValidatorVoteStates: []types.StreamingValidatorVoteState{
-					{
-						ValidatorIndex:    0,
-						PreVotedBlockHash: "ABCD",
-						PreVoted:          true,
-						VotedZeroes:       false,
-						PreCommitVoted:    true,
-					},
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "decode upper case input",
-			inputEncodedData: []byte(strings.ToUpper("1|1/2/3|1000|100|254|000ABCDC")),
-			wantDecoded: &types.StreamingNextBlockVotingInformation{
-				HeightRoundStep:       "1/2/3",
-				Duration:              1 * time.Second,
-				PreVotedPercent:       1,
-				PreCommitVotedPercent: 2.54,
-				ValidatorVoteStates: []types.StreamingValidatorVoteState{
-					{
-						ValidatorIndex:    0,
-						PreVotedBlockHash: "ABCD",
-						PreVoted:          true,
-						VotedZeroes:       false,
-						PreCommitVoted:    true,
-					},
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
-			name:             "decode lower case input",
-			inputEncodedData: []byte(strings.ToLower("1|1/2/3|1000|100|254|000ABCDC")),
-			wantDecoded: &types.StreamingNextBlockVotingInformation{
-				HeightRoundStep:       "1/2/3",
-				Duration:              1 * time.Second,
-				PreVotedPercent:       1,
-				PreCommitVotedPercent: 2.54,
-				ValidatorVoteStates: []types.StreamingValidatorVoteState{
-					{
-						ValidatorIndex:    0,
-						PreVotedBlockHash: "ABCD",
-						PreVoted:          true,
-						VotedZeroes:       false,
-						PreCommitVoted:    true,
-					},
-				},
-			},
-			wantErrDecode: false,
-		},
-		{
 			name:                  "icorrect codec version",
-			inputEncodedData:      []byte("2|1/2/3|1000|100|254|000ABCDC"),
+			inputEncodedData:      []byte("1|1/2/3|1000|100|254|000ABCDC"),
 			wantErrDecode:         true,
 			wantErrDecodeContains: "bad encoding prefix",
 		},
@@ -962,142 +701,10 @@ func Test_cvpCodecV1_DecodeStreamingNextBlockVotingInformation(t *testing.T) {
 			wantErrDecode:         true,
 			wantErrDecodeContains: "bad encoding prefix",
 		},
-		{
-			name:                  "wrong number of elements",
-			inputEncodedData:      []byte("1|1/2/3|1000|100|254"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "wrong number of elements",
-		},
-		{
-			name:                  "wrong number of elements",
-			inputEncodedData:      []byte("1|1/2/3|1000|100|254|000ABCDC|BAD"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "wrong number of elements",
-		},
-		{
-			name:                  "bad format Height/Round/Step",
-			inputEncodedData:      []byte("1|1/2/3/4|1000|100|254|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid height round step",
-		},
-		{
-			name:                  "bad duration ms, negative",
-			inputEncodedData:      []byte("1|1/2/3|-1000|100|254|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "negative duration ms",
-		},
-		{
-			name:                  "bad duration ms, invalid format",
-			inputEncodedData:      []byte("1|1/2/3|aaa|100|254|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to parse duration ms",
-		},
-		{
-			name:                  "bad pre-voted percent x100, negative",
-			inputEncodedData:      []byte("1|1/2/3|1000|-1|1|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid pre-voted percent: -",
-		},
-		{
-			name:                  "bad pre-voted percent x100, greater than 100x100",
-			inputEncodedData:      []byte("1|1/2/3|1000|10100|1|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid pre-voted percent: 101",
-		},
-		{
-			name:                  "bad format pre-voted percent x100, must be integer",
-			inputEncodedData:      []byte("1|1/2/3|1000|aaa|1|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to parse pre-voted percent x100",
-		},
-		{
-			name:                  "bad pre-commit voted percent x100, negative",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|-1|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid pre-commit voted percent: -",
-		},
-		{
-			name:                  "bad pre-commit voted percent x100, greater than 100x100",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|10100|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid pre-commit voted percent: 101",
-		},
-		{
-			name:                  "bad pre-commit voted percent x100, must be integer",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|aaa|000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to parse pre-commit voted percent x100",
-		},
-		{
-			name:                  "require validator vote states",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "missing validator vote states",
-		},
-		{
-			name:                  "bad size of validator vote states",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|000ABCD"), // missing 1 char
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator vote states length",
-		},
-		{
-			name:                  "bad size of validator vote states",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|000ABCDC001"), // missing 1=5 chars
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator vote states length",
-		},
-		{
-			name:                  "validator index can not greater than 998",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|999ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index",
-		},
-		{
-			name:                  "validator index can not be negative",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|-12ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index: -",
-		},
-		{
-			name:                  "validator index must be numeric",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|idxABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "failed to parse validator index",
-		},
-		{
-			name:                  "bad pre-voted block hash",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|000GGGGC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid pre-voted fingerprint block hash: GGGG",
-		},
-		{
-			name:                  "bad pre-voted flag",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|000ABCDZ"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator vote flag: Z",
-		},
-		{
-			name:                  "duplicated validator index",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|000ABCDX000ABCDC"),
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index sequence, 0 at 1",
-		},
-		{
-			name:                  "invalid sequence of validator index",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|000ABCDX002ABCDC"), // index 0 jumped to 2
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index sequence, 2 at 1",
-		},
-		{
-			name:                  "invalid sequence of validator index",
-			inputEncodedData:      []byte("1|1/2/3|1000|1|1|001ABCDX002ABCDC"), // missing index 0
-			wantErrDecode:         true,
-			wantErrDecodeContains: "invalid validator index sequence, 1 at 0",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDecoded, err := cvpV1CodecImpl.DecodeStreamingNextBlockVotingInformation(tt.inputEncodedData)
+			gotDecoded, err := cvpV3CodecImpl.DecodeStreamingNextBlockVotingInformation(tt.inputEncodedData)
 
 			if (err != nil) != tt.wantErrDecode {
 				if err == nil {
@@ -1120,5 +727,25 @@ func Test_cvpCodecV1_DecodeStreamingNextBlockVotingInformation(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func Test_cvpCodecV3_Base64EncodedMonikerBufferSize(t *testing.T) {
+	bz := make([]byte, cvpCodecV2MonikerBufferSize)
+	for r := 1; r <= 100; r++ {
+		size, err := rand.Read(bz)
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+		if size != cvpCodecV2MonikerBufferSize {
+			t.Fatalf("bad rand read size: %v", size)
+			return
+		}
+		base64EncodedMonikerBuffer := []byte(base64.StdEncoding.EncodeToString(bz))
+		if len(base64EncodedMonikerBuffer) != cvpCodecV2Base64EncodedMonikerBufferSize {
+			t.Fatalf("bad base64 encoded moniker buffer size: %v", len(base64EncodedMonikerBuffer))
+			return
+		}
 	}
 }

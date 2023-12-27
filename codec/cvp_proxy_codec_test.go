@@ -11,6 +11,22 @@ import (
 //goland:noinspection GoVarAndConstTypeMayBeOmitted
 var cvpProxyCodecImpl CvpCodec = NewProxyCvpCodec()
 
+func Test_proxyCvpCodec_WrapCvpCodecInProxy(t *testing.T) {
+	t.Run("can wrap non-proxy codec", func(t *testing.T) {
+		_ = WrapCvpCodecInProxy(GetCvpCodecV1())
+		_ = WrapCvpCodecInProxy(GetCvpCodecV2())
+		_ = WrapCvpCodecInProxy(GetCvpCodecV3())
+	})
+	t.Run("can not wrap proxy codec", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("WrapCvpCodecInProxy() did not panic when wrap a proxy codec")
+			}
+		}()
+		_ = WrapCvpCodecInProxy(NewProxyCvpCodec())
+	})
+}
+
 func Test_proxyCvpCodec_EncodeDecodeStreamingLightValidators(t *testing.T) {
 	//goland:noinspection SpellCheckingInspection
 	tests := []struct {
@@ -79,6 +95,7 @@ func Test_proxyCvpCodec_EncodeDecodeStreamingLightValidators(t *testing.T) {
 				}
 				testDetect(cvpV1CodecImpl)
 				testDetect(cvpV2CodecImpl)
+				testDetect(cvpV3CodecImpl)
 			} else {
 				t.Errorf("DecodeStreamingLightValidators()\ngotDecoded = %v\nwant %v", gotDecoded, tt.want)
 			}
@@ -161,6 +178,7 @@ func Test_proxyCvpCodec_EncodeDecodeStreamingNextBlockVotingInformation(t *testi
 				}
 				testDetect(cvpV1CodecImpl)
 				testDetect(cvpV2CodecImpl)
+				testDetect(cvpV3CodecImpl)
 			} else {
 				t.Errorf("DecodeStreamingNextBlockVotingInformation()\ngotDecoded = %v\nwant %v", gotDecoded, tt.input)
 			}
