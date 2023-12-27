@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var cvpV2CodecImpl = getCvpCodecV2()
+var cvpV2CodecImpl = GetCvpCodecV2()
 
 func mergeBuffers(bzs ...[]byte) []byte {
 	var buf bytes.Buffer

@@ -29,7 +29,7 @@ const cvpCodecV1HexEncodedMonikerBufferSize = 40
 type cvpCodecV1 struct {
 }
 
-func getCvpCodecV1() CvpCodec {
+func GetCvpCodecV1() CvpCodec {
 	return cvpCodecV1{}
 }
 

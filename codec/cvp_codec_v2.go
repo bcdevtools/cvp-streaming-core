@@ -31,7 +31,7 @@ var collisionSeparator2BytesReplacement = []byte{0xFF, 0xFF}
 type cvpCodecV2 struct {
 }
 
-func getCvpCodecV2() CvpCodec {
+func GetCvpCodecV2() CvpCodec {
 	return cvpCodecV2{}
 }
 

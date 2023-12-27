@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var cvpV3CodecImpl = getCvpCodecV3()
+var cvpV3CodecImpl = GetCvpCodecV3()
 
 func bufferFromHex(hexString string) []byte {
 	bz, err := hex.DecodeString(hexString)

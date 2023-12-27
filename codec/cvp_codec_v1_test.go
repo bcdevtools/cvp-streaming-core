@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var cvpV1CodecImpl = getCvpCodecV1()
+var cvpV1CodecImpl = GetCvpCodecV1()
 
 func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {
 	//goland:noinspection SpellCheckingInspection

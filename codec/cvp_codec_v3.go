@@ -22,9 +22,9 @@ type cvpCodecV3 struct {
 	v2Codec CvpCodec
 }
 
-func getCvpCodecV3() CvpCodec {
+func GetCvpCodecV3() CvpCodec {
 	return cvpCodecV3{
-		v2Codec: getCvpCodecV2(),
+		v2Codec: GetCvpCodecV2(),
 	}
 }
 
