@@ -9,14 +9,13 @@ import (
 
 var _ CvpCodec = (*proxyCvpCodec)(nil)
 
-var defaultCvpCodec = getCvpCodecV2()
-
 // proxyCvpCodec is an implementation of CvpCodec.
 //
 // The proxy automatically detect version of encoded data and forward to the corresponding implementation for decoding.
 //
 // When invoking encode functions, it forward to default CvpCodec.
 type proxyCvpCodec struct {
+	cvpCodecImpl CvpCodec
 }
 
 // NewProxyCvpCodec returns new instance of proxy CvpCodec.
@@ -25,11 +24,13 @@ type proxyCvpCodec struct {
 //
 // When invoking encode functions, it forward to default CvpCodec.
 func NewProxyCvpCodec() CvpCodec {
-	return proxyCvpCodec{}
+	return proxyCvpCodec{
+		cvpCodecImpl: getCvpCodecV3(),
+	}
 }
 
 func (p proxyCvpCodec) EncodeStreamingLightValidators(validators types.StreamingLightValidators) []byte {
-	return defaultCvpCodec.EncodeStreamingLightValidators(validators)
+	return p.cvpCodecImpl.EncodeStreamingLightValidators(validators)
 }
 
 func (p proxyCvpCodec) DecodeStreamingLightValidators(bz []byte) (types.StreamingLightValidators, error) {
@@ -49,7 +50,7 @@ func (p proxyCvpCodec) DecodeStreamingLightValidators(bz []byte) (types.Streamin
 }
 
 func (p proxyCvpCodec) EncodeStreamingNextBlockVotingInformation(information *types.StreamingNextBlockVotingInformation) []byte {
-	return defaultCvpCodec.EncodeStreamingNextBlockVotingInformation(information)
+	return p.cvpCodecImpl.EncodeStreamingNextBlockVotingInformation(information)
 }
 
 var regexpHeightRoundStep = regexp.MustCompile(`^\d+/\d+/\d+$`)
