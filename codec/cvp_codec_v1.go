@@ -29,6 +29,9 @@ const cvpCodecV1HexEncodedMonikerBufferSize = 40
 type cvpCodecV1 struct {
 }
 
+// GetCvpCodecV1 returns genesis version of CvpCodec.
+//
+// Deprecated: use NewProxyCvpCodec for the latest and compatible version.
 func GetCvpCodecV1() CvpCodec {
 	return cvpCodecV1{}
 }

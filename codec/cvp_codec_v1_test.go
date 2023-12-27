@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+//goland:noinspection GoDeprecation
 var cvpV1CodecImpl = GetCvpCodecV1()
 
 func Test_cvpCodecV1_EncodeDecodeStreamingLightValidators(t *testing.T) {

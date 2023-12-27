@@ -22,6 +22,9 @@ type cvpCodecV3 struct {
 	v2Codec CvpCodec
 }
 
+// GetCvpCodecV3 returns new instance of CvpCodec that actually encode data using v2 codec then gzip it.
+// Procedures smaller data than v2 codec in most cases with large data size.
+// But slower than v2 codec, ofc.
 func GetCvpCodecV3() CvpCodec {
 	return cvpCodecV3{
 		v2Codec: GetCvpCodecV2(),

@@ -31,6 +31,10 @@ var collisionSeparator2BytesReplacement = []byte{0xFF, 0xFF}
 type cvpCodecV2 struct {
 }
 
+// GetCvpCodecV2 returns new instance of v2 implementation of CvpCodec.
+//
+// V2 output smaller size of encoded data than v1.
+// But still not as small as v3 (gzip version of v2).
 func GetCvpCodecV2() CvpCodec {
 	return cvpCodecV2{}
 }
