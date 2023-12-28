@@ -31,7 +31,8 @@ type CvpCodec interface {
 type CvpCodecVersion string
 
 const (
-	CvpCodecVersionV1 CvpCodecVersion = "v1"
-	CvpCodecVersionV2 CvpCodecVersion = "v2"
-	CvpCodecVersionV3 CvpCodecVersion = "v3"
+	CvpCodecVersionUnknown CvpCodecVersion = "unknown"
+	CvpCodecVersionV1      CvpCodecVersion = "v1"
+	CvpCodecVersionV2      CvpCodecVersion = "v2"
+	CvpCodecVersionV3      CvpCodecVersion = "v3"
 )

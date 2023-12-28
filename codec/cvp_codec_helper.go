@@ -2,12 +2,28 @@ package codec
 
 //goland:noinspection SpellCheckingInspection
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
 )
+
+// DetectEncodingVersion will try to detect the encoding version of the given byte array based on the very first bytes.
+// The returned version is 'possible' because it is not guaranteed to be the correct version without actual decode it.
+func DetectEncodingVersion(bz []byte) (possible CvpCodecVersion, detected bool) {
+	if bytes.HasPrefix(bz, prefixDataEncodedByCvpCodecV3) {
+		return CvpCodecVersionV3, true
+	}
+	if bytes.HasPrefix(bz, prefixDataEncodedByCvpCodecV2) {
+		return CvpCodecVersionV2, true
+	}
+	if bytes.HasPrefix(bz, []byte(prefixDataEncodedByCvpCodecV1)) {
+		return CvpCodecVersionV1, true
+	}
+	return CvpCodecVersionUnknown, false
+}
 
 func toUint16Buffer(num int) []byte {
 	if num < 0 || num > math.MaxUint16 {
