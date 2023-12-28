@@ -1,11 +1,91 @@
 package codec
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math"
 	"reflect"
 	"testing"
 )
+
+//goland:noinspection SpellCheckingInspection
+func TestDetectEncodingVersion(t *testing.T) {
+	tests := []struct {
+		name         string
+		bz           []byte
+		wantPossible CvpCodecVersion
+		wantDetected bool
+	}{
+		{
+			name:         "v3",
+			bz:           bufferFromHex("037c1f8b08000000000000ff62aa6160e0e20ecb752bf60d764cf774c6c0b680000000ffffc73c489022000000"),
+			wantPossible: CvpCodecVersionV3,
+			wantDetected: true,
+		},
+		{
+			name:         "accept v3 malformed data",
+			bz:           []byte{0x3, cvpCodecV3Separator, 0x00},
+			wantPossible: CvpCodecVersionV3,
+			wantDetected: true,
+		},
+		{
+			name: "v2",
+			bz: mergeBuffers(
+				prefixDataEncodedByCvpCodecV2,
+				[]byte{0x0, 0x0}, []byte{0x0a, 0x0b}, b64bz(fssut("Val1", 20)),
+			),
+			wantPossible: CvpCodecVersionV2,
+			wantDetected: true,
+		},
+		{
+			name:         "accept v2 malformed data",
+			bz:           []byte{0x2, cvpCodecV2Separator, 0x00},
+			wantPossible: CvpCodecVersionV2,
+			wantDetected: true,
+		},
+		{
+			name:         "v1",
+			bz:           []byte("1|00001010" + hex.EncodeToString(fssut("Val1", 20))),
+			wantPossible: CvpCodecVersionV1,
+			wantDetected: true,
+		},
+		{
+			name:         "accept v1 malformed data",
+			bz:           []byte{'1', []byte(cvpCodecV1Separator)[0], 0x00},
+			wantPossible: CvpCodecVersionV1,
+			wantDetected: true,
+		},
+		{
+			name:         "unknown",
+			bz:           []byte{'4', '|', 0x00},
+			wantPossible: CvpCodecVersionUnknown,
+			wantDetected: false,
+		},
+		{
+			name:         "unknown",
+			bz:           []byte{0x4, '|', 0x00},
+			wantPossible: CvpCodecVersionUnknown,
+			wantDetected: false,
+		},
+		{
+			name:         "unknown",
+			bz:           nil,
+			wantPossible: CvpCodecVersionUnknown,
+			wantDetected: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPossible, gotDetected := DetectEncodingVersion(tt.bz)
+			if gotPossible != tt.wantPossible {
+				t.Errorf("DetectEncodingVersion() gotPossible = %v, want %v", gotPossible, tt.wantPossible)
+			}
+			if gotDetected != tt.wantDetected {
+				t.Errorf("DetectEncodingVersion() gotDetected = %v, want %v", gotDetected, tt.wantDetected)
+			}
+		})
+	}
+}
 
 func Test_fromToUint16Buffer(t *testing.T) {
 	for n1 := 0; n1 <= math.MaxUint16; n1++ {

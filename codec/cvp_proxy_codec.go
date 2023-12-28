@@ -1,7 +1,6 @@
 package codec
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/bcdevtools/cvp-streaming-core/types"
 	"regexp"
@@ -48,16 +47,17 @@ func (p proxyCvpCodec) EncodeStreamingLightValidators(validators types.Streaming
 }
 
 func (p proxyCvpCodec) DecodeStreamingLightValidators(bz []byte) (types.StreamingLightValidators, error) {
-	if bytes.HasPrefix(bz, prefixDataEncodedByCvpCodecV3) {
-		return GetCvpCodecV3().DecodeStreamingLightValidators(bz)
-	}
-
-	if bytes.HasPrefix(bz, prefixDataEncodedByCvpCodecV2) {
-		return GetCvpCodecV2().DecodeStreamingLightValidators(bz)
-	}
-
-	if bytes.HasPrefix(bz, []byte(prefixDataEncodedByCvpCodecV1)) {
-		return GetCvpCodecV1().DecodeStreamingLightValidators(bz)
+	possibleVersion, detected := DetectEncodingVersion(bz)
+	if detected {
+		switch possibleVersion {
+		case CvpCodecVersionV3:
+			return GetCvpCodecV3().DecodeStreamingLightValidators(bz)
+		case CvpCodecVersionV2:
+			return GetCvpCodecV2().DecodeStreamingLightValidators(bz)
+		case CvpCodecVersionV1:
+			//goland:noinspection GoDeprecation
+			return GetCvpCodecV1().DecodeStreamingLightValidators(bz)
+		}
 	}
 
 	return nil, fmt.Errorf("unable to detect encoder version")
@@ -71,16 +71,17 @@ var regexpHeightRoundStep = regexp.MustCompile(`^\d+/\d+/\d+$`)
 var regexpPreVotedFingerprintBlockHash = regexp.MustCompile(`^[a-fA-F\d]{4}$`)
 
 func (p proxyCvpCodec) DecodeStreamingNextBlockVotingInformation(bz []byte) (*types.StreamingNextBlockVotingInformation, error) {
-	if bytes.HasPrefix(bz, prefixDataEncodedByCvpCodecV3) {
-		return GetCvpCodecV3().DecodeStreamingNextBlockVotingInformation(bz)
-	}
-
-	if bytes.HasPrefix(bz, prefixDataEncodedByCvpCodecV2) {
-		return GetCvpCodecV2().DecodeStreamingNextBlockVotingInformation(bz)
-	}
-
-	if bytes.HasPrefix(bz, []byte(prefixDataEncodedByCvpCodecV1)) {
-		return GetCvpCodecV1().DecodeStreamingNextBlockVotingInformation(bz)
+	possibleVersion, detected := DetectEncodingVersion(bz)
+	if detected {
+		switch possibleVersion {
+		case CvpCodecVersionV3:
+			return GetCvpCodecV3().DecodeStreamingNextBlockVotingInformation(bz)
+		case CvpCodecVersionV2:
+			return GetCvpCodecV2().DecodeStreamingNextBlockVotingInformation(bz)
+		case CvpCodecVersionV1:
+			//goland:noinspection GoDeprecation
+			return GetCvpCodecV1().DecodeStreamingNextBlockVotingInformation(bz)
+		}
 	}
 
 	return nil, fmt.Errorf("unable to detect encoder version")
